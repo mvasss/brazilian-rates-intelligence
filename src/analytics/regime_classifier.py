@@ -51,11 +51,18 @@ REGIME_EMOJI = {
 }
 
 
-def _rolling_zscore(series: pd.Series, window: int) -> pd.Series:
-    """Rolling z-score for regime feature construction."""
-    m = series.rolling(window, min_periods=window // 2).mean()
-    s = series.rolling(window, min_periods=window // 2).std()
-    return ((series - m) / s.replace(0, np.nan)).fillna(0)
+def _rolling_zscore(series: pd.Series, window: int = 252) -> pd.Series:
+    """Rolling z-score adapting window when series length or frequency is smaller."""
+    valid = series.dropna()
+    n = len(valid)
+    if n == 0:
+        return pd.Series(0.0, index=series.index)
+    eff_window = min(window, max(8, n))
+    min_p = max(3, min(eff_window // 4, 15))
+    m = series.rolling(eff_window, min_periods=min_p).mean()
+    s = series.rolling(eff_window, min_periods=min_p).std()
+    z = (series - m) / s.replace(0, np.nan)
+    return z.bfill().fillna(0)
 
 
 def build_regime_features(
@@ -76,31 +83,36 @@ def build_regime_features(
     - inflation_exp_change: Change in Focus IPCA expectation
     """
     features = pd.DataFrame(index=curve_metrics.index)
+    is_subdaily = len(curve_metrics) < 150
+    eff_lookback = max(1, lookback // 5) if is_subdaily else lookback
+    eff_window = 52 if is_subdaily else 252
 
     # 1. Slope change
     if "slope" in curve_metrics.columns:
-        slope_chg = curve_metrics["slope"].diff(lookback)
-        features["slope_change"] = _rolling_zscore(slope_chg, 252)
+        slope_chg = curve_metrics["slope"].diff(eff_lookback)
+        features["slope_change"] = _rolling_zscore(slope_chg, eff_window)
 
     # 2. BRL change (USD/BRL: positive = BRL weakening)
     for col in ["usd_brl", "usd_brl_ptax"]:
         if market_data is not None and col in market_data.columns:
-            brl_chg = market_data[col].pct_change(lookback)
-            features["brl_change"] = _rolling_zscore(brl_chg, 252)
+            s = market_data[col].reindex(features.index).ffill()
+            brl_chg = s.pct_change(eff_lookback)
+            features["brl_change"] = _rolling_zscore(brl_chg, eff_window)
             break
 
     # 3. Equity returns
     if market_data is not None and "ibovespa" in market_data.columns:
-        eq_ret = market_data["ibovespa"].pct_change(lookback)
-        features["equity_change"] = _rolling_zscore(eq_ret, 252)
+        s = market_data["ibovespa"].reindex(features.index).ffill()
+        eq_ret = s.pct_change(eff_lookback)
+        features["equity_change"] = _rolling_zscore(eq_ret, eff_window)
 
     # 4. VIX
     if vix is not None and not vix.empty:
         vix_aligned = vix.reindex(features.index).ffill()
-        features["vix_level"] = _rolling_zscore(vix_aligned, 252)
+        features["vix_level"] = _rolling_zscore(vix_aligned, eff_window)
 
     # 5. Inflation expectation change
-    if focus_data is not None:
+    if focus_data is not None and not focus_data.empty:
         ipca_col = None
         for col in focus_data.columns:
             if "ipca" in col.lower():
@@ -108,8 +120,8 @@ def build_regime_features(
                 break
         if ipca_col:
             inf_exp = focus_data[ipca_col].reindex(features.index).ffill()
-            inf_chg = inf_exp.diff(lookback)
-            features["inflation_exp_change"] = _rolling_zscore(inf_chg, 252)
+            inf_chg = inf_exp.diff(eff_lookback)
+            features["inflation_exp_change"] = _rolling_zscore(inf_chg, eff_window)
 
     features = features.dropna(how="all")
     return features

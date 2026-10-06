@@ -102,7 +102,7 @@ def compute_fx_component(
     Uses 21-day USD/BRL percentage change z-score.
     Positive = BRL depreciation = upward rate pressure.
     """
-    pct_chg = usd_brl.pct_change(window)
+    pct_chg = usd_brl.ffill().pct_change(window, fill_method=None)
     return _rolling_zscore(pct_chg).rename("fx_z")
 
 

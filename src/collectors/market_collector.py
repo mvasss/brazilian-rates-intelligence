@@ -42,11 +42,14 @@ def fetch_market_data(
     if ticker_keys is not None:
         all_tickers = {k: v for k, v in all_tickers.items() if k in ticker_keys}
 
-    cache_key = f"market_{'_'.join(sorted(all_tickers.keys()))}_{start}_{end}"
+    cache_key = f"market_v2_{'_'.join(sorted(all_tickers.keys()))}_{start}_{end}"
     cached = get_cached(cache_key)
-    if cached is not None:
-        logger.info("Market data loaded from cache")
-        return cached
+    if cached is not None and not cached.empty:
+        if "ifix" in cached.columns and cached["ifix"].dropna().shape[0] < 10:
+            logger.info("Cached market data contains degenerate ifix; re-fetching")
+        else:
+            logger.info("Market data loaded from cache")
+            return cached
 
     symbols = [v["ticker"] for v in all_tickers.values()]
     names = list(all_tickers.keys())

@@ -43,7 +43,7 @@ FOCUS_INDICATORS = {
 # =============================================================================
 YFINANCE_TICKERS = {
     "ibovespa": {"ticker": "^BVSP", "desc": "Índice Ibovespa"},
-    "ifix": {"ticker": "IFIX.SA", "desc": "Índice IFIX (FIIs)"},
+    "ifix": {"ticker": "XFIX11.SA", "desc": "Índice IFIX (FIIs - ETF Proxy)"},
     "usd_brl": {"ticker": "USDBRL=X", "desc": "Câmbio USD/BRL"},
     "imab11": {"ticker": "IMAB11.SA", "desc": "ETF IMA-B (proxy)"},
     "bova11": {"ticker": "BOVA11.SA", "desc": "ETF Ibovespa"},

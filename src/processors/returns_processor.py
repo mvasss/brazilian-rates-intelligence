@@ -28,7 +28,7 @@ def compute_returns(
     """
     if method == "log":
         return np.log(prices / prices.shift(1))
-    return prices.pct_change()
+    return prices.ffill().pct_change(fill_method=None)
 
 
 def compute_all_asset_returns(
