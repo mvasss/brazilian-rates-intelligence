@@ -215,26 +215,40 @@ def _plot_correlations(sgs, market):
         st.info("Dados insuficientes para calcular correlações.")
         return
 
-    # Use returns for market data, levels for macro
-    corr = combined.pct_change().dropna().corr()
+    # Use pairwise correlation so sparse monthly series don't zero out daily assets
+    pct_df = combined.ffill().pct_change(fill_method=None)
+    corr = pct_df.corr(min_periods=30).dropna(how="all", axis=0).dropna(how="all", axis=1)
 
-    # Clean labels
+    if corr.empty or corr.shape[0] < 2:
+        st.info("Dados insuficientes para calcular a matriz de correlação.")
+        return
+
+    # Clean intuitive Portuguese labels
     labels = {
-        "selic_meta": "Selic", "ipca_12m": "IPCA 12m",
-        "usd_brl_ptax": "USD/BRL", "divida_bruta_pib": "Dívida/PIB",
-        "ibovespa": "Ibovespa", "ifix": "IFIX",
-        "usd_brl": "USD/BRL (mkt)", "imab11": "IMAB11",
+        "selic_meta": "Taxa Selic",
+        "ipca_12m": "IPCA (12M)",
+        "usd_brl_ptax": "Dólar PTAX",
+        "divida_bruta_pib": "Dívida/PIB",
+        "ibovespa": "Ibovespa (Ações)",
+        "bova11": "BOVA11 (ETF Ibov)",
+        "ifix": "IFIX (Fundos Imob.)",
+        "imab11": "IMAB11 (Títulos IPCA)",
+        "usd_brl": "Dólar Comercial",
     }
-    corr.index = [labels.get(c, c) for c in corr.index]
-    corr.columns = [labels.get(c, c) for c in corr.columns]
+    corr.index = [labels.get(c, c.upper()) for c in corr.index]
+    corr.columns = [labels.get(c, c.upper()) for c in corr.columns]
 
     fig = px.imshow(
         corr,
         color_continuous_scale=["#E94560", "#1A1A2E", "#00D2FF"],
         zmin=-1, zmax=1,
         text_auto=".2f",
+        labels=dict(color="Correlação de Pearson"),
     )
-    fig.update_layout(title="Matriz de Correlação", height=500)
+    fig.update_layout(
+        title="Matriz de Correlação Entre Variáveis Macroeconômicas e Ativos",
+        height=520,
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 

@@ -83,6 +83,7 @@ def main():
         _show_demo_regimes()
         return
 
+    curr = get_current_regime(rules_df)
     regime_names_pt = {
         "risk_on": "Apetite a Risco (Risk-On)",
         "risk_off": "Aversão a Risco (Risk-Off)",
