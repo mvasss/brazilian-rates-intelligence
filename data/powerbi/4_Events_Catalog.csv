@@ -1,0 +1,110 @@
+date,event_type,direction,description
+2020-02-05,copom,cut,Selic → 4.25% (-25bps)
+2020-03-03,fomc,cut,Emergency cut (COVID)
+2020-03-15,fomc,cut,Emergency cut to 0-0.25%
+2020-03-18,copom,cut,Selic → 3.75% (-50bps)
+2020-03-20,fiscal,negative,Calamidade pública COVID
+2020-05-06,copom,cut,Selic → 3.0% (-75bps)
+2020-06-17,copom,cut,Selic → 2.25% (-75bps)
+2020-08-05,copom,cut,Selic → 2.0% (-25bps)
+2020-09-16,copom,hold,Selic → 2.0% (+0bps)
+2020-10-28,copom,hold,Selic → 2.0% (+0bps)
+2020-12-09,copom,hold,Selic → 2.0% (+0bps)
+2021-01-20,copom,hold,Selic → 2.0% (+0bps)
+2021-03-15,fiscal,negative,Fura-teto: PEC Emergencial
+2021-03-17,copom,hike,Selic → 2.75% (+75bps)
+2021-05-05,copom,hike,Selic → 3.5% (+75bps)
+2021-06-16,copom,hike,Selic → 4.25% (+75bps)
+2021-08-04,copom,hike,Selic → 5.25% (+100bps)
+2021-09-22,copom,hike,Selic → 6.25% (+100bps)
+2021-10-20,fiscal,negative,Precatórios PEC — fura-teto
+2021-10-27,copom,hike,Selic → 7.75% (+150bps)
+2021-12-08,copom,hike,Selic → 9.25% (+150bps)
+2022-02-02,copom,hike,Selic → 10.75% (+150bps)
+2022-03-04,focus_surprise,hawkish,Selic_current: +0.50pp
+2022-03-11,focus_surprise,dovish,Selic_current: -0.50pp
+2022-03-16,fomc,hike,First hike post-COVID
+2022-03-16,copom,hike,Selic → 11.75% (+100bps)
+2022-05-04,fomc,hike,50bps hike
+2022-05-04,copom,hike,Selic → 12.75% (+100bps)
+2022-06-03,focus_surprise,hawkish,Selic_current: +0.50pp
+2022-06-15,fomc,hike,75bps hike
+2022-06-15,copom,hike,Selic → 13.25% (+50bps)
+2022-06-23,fiscal,negative,PEC Kamikaze (benefícios eleitorais)
+2022-07-27,fomc,hike,75bps hike
+2022-08-03,copom,hike,Selic → 13.75% (+50bps)
+2022-09-21,fomc,hike,75bps hike
+2022-09-21,copom,hold,Selic → 13.75% (+0bps)
+2022-10-26,copom,hold,Selic → 13.75% (+0bps)
+2022-11-02,fomc,hike,75bps hike
+2022-12-07,copom,hold,Selic → 13.75% (+0bps)
+2022-12-14,fomc,hike,50bps hike
+2023-01-12,fiscal,positive,Novo arcabouço fiscal (proposta)
+2023-01-20,focus_surprise,hawkish,Selic_current: +0.50pp
+2023-02-01,fomc,hike,25bps hike
+2023-02-01,copom,hold,Selic → 13.75% (+0bps)
+2023-02-17,focus_surprise,hawkish,Selic_current: +0.50pp
+2023-02-24,focus_surprise,dovish,Selic_current: -0.50pp
+2023-03-22,fomc,hike,25bps hike to 5%
+2023-03-22,copom,hold,Selic → 13.75% (+0bps)
+2023-03-30,fiscal,positive,Arcabouço fiscal aprovado
+2023-03-31,focus_surprise,dovish,Selic_current: -0.50pp
+2023-05-03,copom,hold,Selic → 13.75% (+0bps)
+2023-05-03,fomc,hike,Hold at 5-5.25%
+2023-06-21,copom,hold,Selic → 13.75% (+0bps)
+2023-07-26,fomc,hike,25bps hike to 5.25-5.5%
+2023-08-02,copom,cut,Selic → 13.25% (-50bps)
+2023-08-04,focus_surprise,dovish,Selic_next: -0.50pp
+2023-08-24,fiscal,negative,Meta fiscal flexibilizada
+2023-09-20,copom,cut,Selic → 12.75% (-50bps)
+2023-11-01,copom,cut,Selic → 12.25% (-50bps)
+2023-12-13,copom,cut,Selic → 11.75% (-50bps)
+2024-01-31,copom,cut,Selic → 11.25% (-50bps)
+2024-03-20,copom,cut,Selic → 10.75% (-50bps)
+2024-04-15,fiscal,negative,Revisão meta fiscal 2025
+2024-05-08,copom,cut,Selic → 10.5% (-25bps)
+2024-06-19,copom,hold,Selic → 10.5% (+0bps)
+2024-07-26,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-07-31,copom,hold,Selic → 10.5% (+0bps)
+2024-08-02,focus_surprise,dovish,Selic_current: -0.50pp
+2024-08-23,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-08-30,focus_surprise,dovish,Selic_current: -0.50pp
+2024-09-06,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-09-18,copom,hike,Selic → 10.75% (+25bps)
+2024-09-18,fomc,cut,First cut
+2024-11-06,copom,hike,Selic → 11.25% (+50bps)
+2024-11-07,fomc,cut,25bps cut
+2024-11-28,fiscal,positive,Pacote corte gastos anunciado
+2024-11-29,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-12-06,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-12-11,copom,hike,Selic → 12.25% (+100bps)
+2024-12-13,focus_surprise,hawkish,Selic_current: +0.50pp
+2024-12-18,fomc,cut,25bps cut
+2024-12-20,focus_surprise,hawkish,Selic_current: +0.50pp
+2025-01-29,copom,hike,Selic → 13.25% (+100bps)
+2025-01-29,fomc,hold,Hold
+2025-02-14,focus_surprise,dovish,Selic_next: -0.50pp
+2025-03-19,fomc,hold,Hold
+2025-03-19,copom,hike,Selic → 14.25% (+100bps)
+2025-03-31,fiscal,negative,Revisão meta primária
+2025-04-04,focus_surprise,dovish,Selic_next: -0.50pp
+2025-04-04,focus_surprise,dovish,Selic_current: -1.12pp
+2025-04-11,focus_surprise,hawkish,Selic_next: +0.50pp
+2025-04-11,focus_surprise,hawkish,Selic_current: +0.88pp
+2025-05-07,copom,hike,Selic → 14.75% (+50bps)
+2025-05-07,fomc,hold,Hold
+2025-06-06,focus_surprise,dovish,Selic_next: -0.50pp
+2025-06-13,focus_surprise,hawkish,Selic_next: +0.50pp
+2025-06-18,fomc,cut,25bps cut
+2025-06-18,copom,hold,Selic → 14.75% (+0bps)
+2025-07-04,focus_surprise,dovish,Selic_next: -0.50pp
+2025-07-11,focus_surprise,hawkish,Selic_next: +0.50pp
+2025-08-29,focus_surprise,dovish,Selic_current: -0.50pp
+2025-10-10,focus_surprise,hawkish,Selic_current: +0.50pp
+2026-01-02,focus_surprise,dovish,Selic_next: -0.50pp
+2026-01-09,focus_surprise,hawkish,Selic_next: +0.50pp
+2026-01-30,focus_surprise,dovish,Selic_next: -0.50pp
+2026-02-06,focus_surprise,hawkish,Selic_next: +0.50pp
+2026-04-17,focus_surprise,hawkish,Selic_next: +0.50pp
+2026-06-12,focus_surprise,hawkish,Selic_current: +0.50pp
+2026-06-12,focus_surprise,hawkish,Selic_next: +0.50pp
