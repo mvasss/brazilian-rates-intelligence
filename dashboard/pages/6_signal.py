@@ -96,10 +96,10 @@ def main():
 
     # KPIs
     kpis = [
-        {"label": "Score Atual (-100 a +100)", "value": f"{score:+.1f}", "delta": round(score, 1)},
+        {"label": "Pressão Atual na Curva DI", "value": f"{score:+.1f} pts", "delta": round(score, 1)},
         {"label": "Diagnóstico do Modelo", "value": interp},
-        {"label": "Horizonte Ótimo (IC)", "value": "+21d (Spearman 0.32)"},
-        {"label": "Acurácia Direcional", "value": "64.5% no backtest"},
+        {"label": "Horizonte Mais Previsível", "value": "21 Dias Úteis (1 Mês)"},
+        {"label": "Taxa de Acerto Histórica", "value": "64,5% no Backtest"},
     ]
     render_kpi_row(kpis)
 
@@ -115,21 +115,44 @@ def main():
 
     st.markdown("---")
 
-    tab1, tab2 = st.tabs(["📈 Histórico do Score vs Curva", "🎯 Backtest & Acurácia"])
+    tab1, tab2 = st.tabs(["📈 Histórico do Score vs Curva de Juros", "🎯 Backtest & Validação Estatística"])
 
     with tab1:
         _plot_signal_history(signal_df)
 
     with tab2:
         if not backtest_res.empty:
-            st.markdown("### 📊 Performance Preditiva Fora da Amostra")
-            st.dataframe(backtest_res.style.format({
-                "correlation": "{:.2f}",
-                "rank_correlation": "{:.2f}",
-                "rank_p_value": "{:.4f}",
-                "directional_accuracy": "{:.1f}%",
-                "ic": "{:.2f}",
+            st.markdown("### 📊 Performance Preditiva Fora da Amostra (Backtest)")
+            
+            # Format horizon and friendly column headers
+            horizon_map = {
+                5: "5 Dias Úteis (1 Semana)",
+                10: "10 Dias Úteis (2 Semanas)",
+                21: "21 Dias Úteis (1 Mês)",
+                63: "63 Dias Úteis (1 Trimestre)",
+            }
+            display_backtest = backtest_res.copy()
+            if "horizon" in display_backtest.columns:
+                display_backtest["horizon"] = display_backtest["horizon"].map(lambda x: horizon_map.get(x, f"{x} dias"))
+
+            col_rename = {
+                "horizon": "Horizonte de Previsão",
+                "correlation": "Correlação Linear",
+                "rank_correlation": "Correlação de Ranking (Spearman)",
+                "rank_p_value": "P-Valor (Significância)",
+                "directional_accuracy": "Taxa de Acerto Direcional (%)",
+                "ic": "Coeficiente de Informação (IC)",
+            }
+            display_backtest = display_backtest.rename(columns=col_rename)
+
+            st.dataframe(display_backtest.style.format({
+                "Correlação Linear": "{:.2f}",
+                "Correlação de Ranking (Spearman)": "{:.2f}",
+                "P-Valor (Significância)": "{:.4f}",
+                "Taxa de Acerto Direcional (%)": "{:.1f}%",
+                "Coeficiente de Informação (IC)": "{:.2f}",
             }), use_container_width=True)
+            st.caption("Nota: IC > 0.05 com p-valor < 0.05 é considerado preditivo em literatura quantitativa institucional.")
         else:
             st.info("Curva histórica insuficiente para backtest na janela selecionada.")
 
@@ -140,7 +163,7 @@ def _plot_gauge(score: float):
         mode="gauge+number",
         value=score,
         number={"suffix": " pts", "font": {"size": 36, "color": COLORS["text_primary"]}},
-        title={"text": "<b>Rates Pressure Gauge</b><br><span style='font-size:0.8em;color:gray'>-100 (Alívio) a +100 (Pressão)</span>"},
+        title={"text": "<b>Termômetro de Pressão da Curva DI</b><br><span style='font-size:0.8em;color:gray'>-100 (Alívio / Queda de Juros) a +100 (Pressão / Alta de Juros)</span>"},
         gauge={
             "axis": {"range": [-100, 100], "tickwidth": 1, "tickcolor": "white"},
             "bar": {"color": COLORS["chart_1"], "thickness": 0.25},
@@ -169,10 +192,10 @@ def _plot_pillar_decomposition(components: dict):
     """Plot horizontal bar chart of the 4 pillar contributions."""
     weights = {"inflation": 0.30, "fiscal": 0.20, "fx": 0.25, "monetary": 0.25}
     labels = {
-        "inflation": "Surpresa de Inflação (30%)",
-        "fiscal": "Risco Fiscal (20%)",
-        "fx": "Pressão Cambial USD (25%)",
-        "monetary": "Expectativa Selic (25%)",
+        "inflation": "Surpresa de Inflação (Focus) [30%]",
+        "fiscal": "Risco Fiscal & Dívida [20%]",
+        "fx": "Pressão Cambial (Dólar) [25%]",
+        "monetary": "Expectativa Taxa Selic [25%]",
     }
 
     names = [labels[k] for k in components.keys()]
@@ -188,8 +211,8 @@ def _plot_pillar_decomposition(components: dict):
     ))
     fig.add_vline(x=0, line_color="rgba(255, 255, 255, 0.3)")
     fig.update_layout(
-        title="Contribuição Ponderada por Pilar (Desvios)",
-        xaxis_title="Contribuição no Z-Score do Modelo",
+        title="Contribuição Ponderada por Pilar Macroeconômico",
+        xaxis_title="Impacto Ponderado no Score (Desvios σ)",
         height=350,
         margin=dict(l=30, r=30, t=50, b=20),
     )

@@ -58,25 +58,25 @@ def main():
     metrics = []
     if "selic_meta" in sgs.columns:
         last_selic = sgs["selic_meta"].dropna().iloc[-1]
-        metrics.append({"label": "Selic Meta", "value": f"{last_selic:.2f}%"})
+        metrics.append({"label": "Taxa Selic Meta", "value": f"{last_selic:.2f}%"})
 
     if "ipca_12m" in sgs.columns:
         last_ipca = sgs["ipca_12m"].dropna().iloc[-1]
         prev_ipca = sgs["ipca_12m"].dropna().iloc[-2] if len(sgs["ipca_12m"].dropna()) > 1 else None
         delta = last_ipca - prev_ipca if prev_ipca else None
-        metrics.append({"label": "IPCA 12m", "value": f"{last_ipca:.2f}%", "delta": delta, "suffix": "pp"})
+        metrics.append({"label": "IPCA Acumulado 12M", "value": f"{last_ipca:.2f}%", "delta": delta, "suffix": "pp"})
 
     if "usd_brl_ptax" in sgs.columns:
         last_fx = sgs["usd_brl_ptax"].dropna().iloc[-1]
-        metrics.append({"label": "USD/BRL", "value": f"R$ {last_fx:.2f}"})
+        metrics.append({"label": "Câmbio Comercial (USD/BRL)", "value": f"R$ {last_fx:.2f}"})
 
     if not focus.empty and "IPCA_current" in focus.columns:
         last_focus = focus["IPCA_current"].dropna().iloc[-1]
-        metrics.append({"label": "Focus IPCA", "value": f"{last_focus:.2f}%"})
+        metrics.append({"label": "Expectativa IPCA (Focus)", "value": f"{last_focus:.2f}%"})
 
     if "divida_bruta_pib" in sgs.columns:
         last_debt = sgs["divida_bruta_pib"].dropna().iloc[-1]
-        metrics.append({"label": "Dívida/PIB", "value": f"{last_debt:.1f}%"})
+        metrics.append({"label": "Dívida Bruta / PIB", "value": f"{last_debt:.1f}%"})
 
     if metrics:
         render_kpi_row(metrics)

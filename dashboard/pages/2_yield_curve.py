@@ -64,15 +64,15 @@ def main():
     if not metrics.empty:
         last = metrics.iloc[-1]
         if "level" in metrics.columns:
-            kpis.append({"label": "Nível da Curva", "value": f"{last['level']:.2f}%"})
+            kpis.append({"label": "Nível Médio da Curva (Level)", "value": f"{last['level']:.2f}%"})
         if "slope" in metrics.columns:
             delta = last.get("slope_1w")
-            kpis.append({"label": "Slope (10Y-2Y)", "value": f"{last['slope']:.2f}pp",
+            kpis.append({"label": "Inclinação (10A - 2A) [Slope]", "value": f"{last['slope']:.2f}pp",
                           "delta": round(delta, 2) if pd.notna(delta) else None, "suffix": "pp"})
         if "curvature" in metrics.columns:
-            kpis.append({"label": "Curvatura", "value": f"{last['curvature']:.2f}pp"})
+            kpis.append({"label": "Curvatura da Estrutura a Termo", "value": f"{last['curvature']:.2f}pp"})
         if "real_yield" in metrics.columns and pd.notna(last.get("real_yield")):
-            kpis.append({"label": "Real Yield", "value": f"{last['real_yield']:.2f}%"})
+            kpis.append({"label": "Juro Real Ex-Ante (1A - IPCA)", "value": f"{last['real_yield']:.2f}%"})
 
     if kpis:
         render_kpi_row(kpis)
@@ -80,7 +80,7 @@ def main():
     st.markdown("---")
 
     tab1, tab2, tab3 = st.tabs([
-        "📉 Curva Atual", "📊 Evolução Temporal", "🌡️ Heatmap"
+        "📉 Estrutura a Termo Atual", "📊 Dinâmica Temporal (Level / Slope)", "🌡️ Mapa de Calor Temporal (Heatmap)"
     ])
 
     with tab1:

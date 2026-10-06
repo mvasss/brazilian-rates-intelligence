@@ -84,21 +84,43 @@ def main():
         st.info("Não foi possível calcular respostas com a janela selecionada.")
         return
 
+    # Friendly mappings for non-technical readability
+    scenario_labels = {
+        "+50bps": "Abertura Leve da Curva (+50 bps / +0,50 pp)",
+        "+100bps": "Abertura Forte (+100 bps / +1,00 pp)",
+        "+200bps": "Choque Severo de Alta (+200 bps / +2,00 pp)",
+        "-50bps": "Fechamento Leve (-50 bps / -0,50 pp)",
+        "-100bps": "Fechamento Forte (-100 bps / -1,00 pp)",
+        "-200bps": "Alívio Expressivo de Queda (-200 bps / -2,00 pp)",
+    }
+    asset_labels = {
+        "bova11": "BOVA11 (Ações)",
+        "ibovespa": "Ibovespa (Índice)",
+        "ifix": "IFIX (Fundos Imob.)",
+        "imab11": "IMAB11 (Renda Fixa IPCA)",
+        "usd_brl": "Dólar (USD/BRL)",
+    }
+
     # Interactive Scenario Filter
     scenario_list = sorted(responses["scenario"].unique().tolist())
-    selected_scen = st.selectbox("Simulador: Selecione o Cenário de Movimento de Taxas", scenario_list, index=0)
+    selected_scen = st.selectbox(
+        "Simulador: Selecione o Cenário de Movimento de Taxas",
+        scenario_list,
+        index=0,
+        format_func=lambda x: scenario_labels.get(x, x),
+    )
 
     sub_resp = responses[responses["scenario"] == selected_scen]
     n_cases = len(sub_resp)
 
     # KPIs for the selected scenario
-    kpis = [{"label": "Cenário Selecionado", "value": selected_scen}]
-    for asset in ["ibovespa", "usd_brl", "imab11"]:
+    kpis = [{"label": "Cenário Simulado", "value": scenario_labels.get(selected_scen, selected_scen)}]
+    for asset in ["ibovespa", "ifix", "imab11", "usd_brl"]:
         col = f"{asset}_21d"
         if col in sub_resp.columns:
             med_ret = sub_resp[col].median()
             kpis.append({
-                "label": f"{asset.upper()} (Mediana 21d)",
+                "label": f"{asset_labels.get(asset, asset.upper())} (Mediana 21d)",
                 "value": f"{med_ret:+.2f}%",
                 "delta": round(med_ret, 2),
                 "suffix": "%",
@@ -109,42 +131,49 @@ def main():
     st.markdown("---")
 
     tab1, tab2, tab3 = st.tabs([
-        "🔥 Heatmap de Sensibilidade Cruzada",
-        "📦 Distribuição dos Retornos",
+        "🔥 Mapa de Sensibilidade Entre Ativos",
+        "📦 Distribuição Histórica dos Retornos",
         "⏱️ Defasagem Temporal (Lead / Lag)",
     ])
 
     with tab1:
-        _plot_heatmap(responses)
+        _plot_heatmap(responses, asset_labels, scenario_labels)
 
     with tab2:
-        _plot_distributions(sub_resp, selected_scen)
+        _plot_distributions(sub_resp, selected_scen, asset_labels, scenario_labels)
 
     with tab3:
         _plot_lead_lag_view(curve_metrics, returns)
 
 
-def _plot_heatmap(responses: pd.DataFrame):
+def _plot_heatmap(responses: pd.DataFrame, asset_labels: dict | None = None, scenario_labels: dict | None = None):
     """Plot cross-asset sensitivity heatmap for 21-day forward window."""
     heatmap_df = build_impact_heatmap(responses, window=21)
     if heatmap_df.empty:
         st.info("Dados insuficientes para construir heatmap de sensibilidade.")
         return
 
+    # Translate column and index names for display
+    plot_df = heatmap_df.copy()
+    if asset_labels:
+        plot_df.columns = [asset_labels.get(c.lower(), c.upper()) for c in plot_df.columns]
+    if scenario_labels:
+        plot_df.index = [scenario_labels.get(idx, idx) for idx in plot_df.index]
+
     fig = px.imshow(
-        heatmap_df,
+        plot_df,
         color_continuous_scale=["#E94560", "#16213E", "#00D2FF"],
         text_auto=".2f",
-        labels=dict(x="Classe de Ativo", y="Choque na Curva", color="Retorno Mediano (%)"),
+        labels=dict(x="Classe de Ativo", y="Cenário de Movimento na Curva", color="Retorno Mediano (%)"),
     )
     fig.update_layout(
-        title="Retorno Mediano em 21 Dias Úteis por Cenário de Taxas (%)",
+        title="Sensibilidade: Retorno Mediano em 21 Dias Úteis por Choque de Taxas (%)",
         height=420,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _plot_distributions(sub_resp: pd.DataFrame, scenario_name: str):
+def _plot_distributions(sub_resp: pd.DataFrame, scenario_name: str, asset_labels: dict | None = None, scenario_labels: dict | None = None):
     """Plot boxplot and dispersion of asset returns."""
     ret_cols = [c for c in sub_resp.columns if c.endswith("_21d")]
     if not ret_cols:
@@ -156,7 +185,13 @@ def _plot_distributions(sub_resp: pd.DataFrame, scenario_name: str):
         var_name="Ativo",
         value_name="Retorno 21d (%)"
     )
-    melted["Ativo"] = melted["Ativo"].str.replace("_21d", "").str.upper()
+    melted["Ativo"] = melted["Ativo"].str.replace("_21d", "")
+    if asset_labels:
+        melted["Ativo"] = melted["Ativo"].map(lambda x: asset_labels.get(x.lower(), x.upper()))
+    else:
+        melted["Ativo"] = melted["Ativo"].str.upper()
+
+    display_scen = scenario_labels.get(scenario_name, scenario_name) if scenario_labels else scenario_name
 
     fig = px.box(
         melted,
@@ -164,7 +199,7 @@ def _plot_distributions(sub_resp: pd.DataFrame, scenario_name: str):
         y="Retorno 21d (%)",
         color="Ativo",
         points="all",
-        title=f"Distribuição do Retorno em 21 Dias no Cenário: {scenario_name}",
+        title=f"Distribuição do Retorno em 21 Dias Úteis — {display_scen}",
     )
     fig.add_hline(y=0, line_dash="dash", line_color="rgba(255, 255, 255, 0.3)")
     fig.update_layout(height=450, showlegend=False)

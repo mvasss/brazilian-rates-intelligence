@@ -83,8 +83,13 @@ def main():
         _show_demo_regimes()
         return
 
-    curr = get_current_regime(rules_df)
-    regime_name = curr["regime"].replace("_", " ").title()
+    regime_names_pt = {
+        "risk_on": "Apetite a Risco (Risk-On)",
+        "risk_off": "Aversão a Risco (Risk-Off)",
+        "inflationary": "Choque Inflacionário",
+        "disinflationary": "Desinflação / Alívio",
+    }
+    regime_name = regime_names_pt.get(curr["regime"], curr["regime"].replace("_", " ").title())
 
     # Calculate days in current regime
     r_series = rules_df["regime"]
@@ -96,17 +101,19 @@ def main():
             break
 
     kpis = [
-        {"label": "Regime Atual", "value": f"{curr['emoji']} {regime_name}"},
-        {"label": "Confiança do Sinal", "value": f"{curr['confidence'] * 100:.1f}%"},
-        {"label": "Duração no Regime", "value": f"{streak} dias"},
-        {"label": "Validação GMM", "value": "Consistente" if not gmm_df.empty and gmm_df.iloc[-1].get("regime_gmm") == curr["regime"] else "Divergente"},
+        {"label": "Regime de Mercado Atual", "value": f"{curr['emoji']} {regime_name}"},
+        {"label": "Grau de Confiança do Sinal", "value": f"{curr['confidence'] * 100:.1f}%"},
+        {"label": "Tempo no Regime Atual", "value": f"{streak} dias úteis"},
+        {"label": "Validação Estatística (GMM)", "value": "Consistente (Modelos Convergem)" if not gmm_df.empty and gmm_df.iloc[-1].get("regime_gmm") == curr["regime"] else "Transição em Andamento"},
     ]
     render_kpi_row(kpis)
 
     st.markdown("---")
 
     tab1, tab2, tab3 = st.tabs([
-        "🗺️ Timeline Histórica", "🧭 Drivers do Regime", "📊 Retornos por Regime"
+        "🗺️ Linha do Tempo Histórica",
+        "🧭 Forças Propulsoras do Regime (Drivers)",
+        "📊 Retornos e Risco por Regime",
     ])
 
     with tab1:
@@ -117,7 +124,7 @@ def main():
 
     with tab3:
         if not returns.empty:
-            _plot_performance(rules_df, returns)
+            _plot_performance(rules_df, returns, regime_names_pt)
         else:
             st.info("Séries de retornos indisponíveis para a janela selecionada.")
 
@@ -171,54 +178,95 @@ def _plot_timeline(rules_df: pd.DataFrame, features: pd.DataFrame):
 
 
 def _plot_drivers(features: pd.DataFrame, rules_df: pd.DataFrame):
-    """Plot the underlying rolling Z-score components."""
+    """Plot the underlying rolling Z-score components with friendly labels."""
     fig = go.Figure()
     drivers = [c for c in features.columns if c.endswith("_change") or c.endswith("_level")]
+
+    driver_labels = {
+        "slope_change": "Variação da Inclinação da Curva (Slope)",
+        "brl_change": "Variação Cambial (Dólar USD/BRL)",
+        "equity_change": "Variação da Bolsa (Ibovespa)",
+        "inflation_exp_change": "Expectativa de Inflação (Focus IPCA)",
+        "vix_level": "Índice de Aversão Global (VIX)",
+    }
 
     colors_cycle = CHART_COLORS
     for i, col in enumerate(drivers):
         fig.add_trace(go.Scatter(
             x=features.index,
             y=features[col],
-            name=col.replace("_", " ").title(),
-            line=dict(color=colors_cycle[i % len(colors_cycle)], width=1.5),
+            name=driver_labels.get(col, col.replace("_", " ").title()),
+            line=dict(color=colors_cycle[i % len(colors_cycle)], width=1.8),
         ))
 
-    fig.add_hline(y=0.5, line_dash="dash", line_color="rgba(255, 255, 255, 0.2)", annotation_text="+0.5σ")
-    fig.add_hline(y=-0.5, line_dash="dash", line_color="rgba(255, 255, 255, 0.2)", annotation_text="-0.5σ")
+    fig.add_hline(y=0.5, line_dash="dash", line_color="rgba(255, 255, 255, 0.25)", annotation_text="+0.5σ (Pressão)")
+    fig.add_hline(y=-0.5, line_dash="dash", line_color="rgba(255, 255, 255, 0.25)", annotation_text="-0.5σ (Alívio)")
 
     fig.update_layout(
-        title="Drivers do Regime (Z-Scores Normalizados)",
-        yaxis_title="Desvios-Padrão (σ)",
+        title="Forças Propulsoras dos Regimes (Indicadores Normalizados em Desvios σ)",
+        yaxis_title="Intensidade da Variação (Desvios σ)",
         height=420,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _plot_performance(rules_df: pd.DataFrame, returns: pd.DataFrame):
-    """Display asset returns conditional on regime."""
+def _plot_performance(rules_df: pd.DataFrame, returns: pd.DataFrame, regime_names_pt: dict):
+    """Display asset returns conditional on regime with intuitive labels."""
     table = regime_performance_table(rules_df, returns)
     if table.empty:
         st.info("Amostra insuficiente para cálculo de retorno condicional.")
         return
 
-    st.markdown("### 📋 Retornos Anualizados e Volatilidade por Regime")
-    st.dataframe(table.style.format("{:.2f}"), use_container_width=True)
+    col_labels = {
+        "n_days": "Dias no Regime",
+        "bova11_ann_ret": "BOVA11 Retorno (%)",
+        "bova11_ann_vol": "BOVA11 Volatilidade (%)",
+        "bova11_hit_rate": "BOVA11 % Positivo",
+        "ifix_ann_ret": "IFIX Retorno (%)",
+        "ifix_ann_vol": "IFIX Volatilidade (%)",
+        "ifix_hit_rate": "IFIX % Positivo",
+        "imab11_ann_ret": "IMAB11 Retorno (%)",
+        "imab11_ann_vol": "IMAB11 Volatilidade (%)",
+        "imab11_hit_rate": "IMAB11 % Positivo",
+        "usd_brl_ann_ret": "Dólar Variação (%)",
+        "usd_brl_ann_vol": "Dólar Volatilidade (%)",
+        "usd_brl_hit_rate": "Dólar % Positivo",
+        "ibovespa_ann_ret": "Ibovespa Retorno (%)",
+        "ibovespa_ann_vol": "Ibovespa Volatilidade (%)",
+        "ibovespa_hit_rate": "Ibovespa % Positivo",
+    }
 
-    # Box plot / Bar chart of mean returns
+    display_table = table.copy()
+    display_table.index = [regime_names_pt.get(idx, idx) for idx in display_table.index]
+    display_table = display_table.rename(columns=col_labels)
+
+    st.markdown("### 📋 Retornos Anualizados, Volatilidade e Taxa de Positividade por Regime")
+    st.dataframe(display_table.style.format("{:.2f}"), use_container_width=True)
+
+    # Bar chart of mean annualized returns
     ret_cols = [c for c in table.columns if c.endswith("_ann_ret")]
     if ret_cols:
+        asset_names_map = {
+            "BOVA11": "BOVA11 (ETF Ibov)",
+            "IFIX": "IFIX (Fundos Imob.)",
+            "IMAB11": "IMAB11 (Títulos IPCA)",
+            "USD_BRL": "Dólar (USD/BRL)",
+            "IBOVESPA": "Ibovespa (Índice)",
+        }
         chart_data = table[ret_cols].reset_index()
         chart_data.columns = [c.replace("_ann_ret", "").upper() for c in chart_data.columns]
+        chart_data["REGIME"] = chart_data["REGIME"].map(lambda x: regime_names_pt.get(x.lower(), x))
+
+        melted_chart = chart_data.melt(id_vars=["REGIME"], var_name="Ativo", value_name="Retorno Anualizado (%)")
+        melted_chart["Ativo"] = melted_chart["Ativo"].map(lambda x: asset_names_map.get(x, x))
 
         fig = px.bar(
-            chart_data.melt(id_vars=["REGIME"], var_name="Ativo", value_name="Retorno Anualizado (%)"),
+            melted_chart,
             x="Ativo",
             y="Retorno Anualizado (%)",
             color="REGIME",
             barmode="group",
-            color_discrete_map=REGIME_COLORS,
-            title="Retorno Anualizado por Ativo e Regime de Mercado",
+            title="Comparativo de Retorno Anualizado por Classe de Ativo e Regime",
         )
         fig.update_layout(height=420)
         st.plotly_chart(fig, use_container_width=True)

@@ -64,19 +64,56 @@ def main():
         _show_demo_events()
         return
 
+    # Friendly dictionaries for intuitive UI
+    asset_labels = {
+        "bova11": "BOVA11 (ETF Ibovespa)",
+        "ibovespa": "Ibovespa (Índice de Ações)",
+        "ifix": "IFIX (Fundos Imobiliários)",
+        "imab11": "IMAB11 (Títulos Públicos IPCA)",
+        "usd_brl": "USD/BRL (Dólar Comercial)",
+    }
+    event_type_labels = {
+        "copom": "Decisões do COPOM (Taxa Selic)",
+        "focus_surprise": "Surpresas do Relatório Focus",
+        "fomc": "Decisões do FOMC (Fed EUA)",
+        "fiscal": "Eventos Fiscais e Reformas",
+    }
+    direction_labels = {
+        "hike": "Elevação / Aperto (Hike)",
+        "cut": "Corte de Juros (Cut)",
+        "hold": "Manutenção (Sem Mudança)",
+        "hawkish": "Surpresa de Alta (Hawkish)",
+        "dovish": "Surpresa de Queda (Dovish)",
+        "deterioration": "Deterioração Fiscal",
+        "consolidation": "Ajuste / Consolidação Fiscal",
+    }
+
     # Event selection controls
     c1, c2, c3 = st.columns(3)
     with c1:
         event_types = sorted(events["event_type"].dropna().unique().tolist())
-        sel_type = st.selectbox("Tipo de Evento", ["Todos"] + event_types)
+        sel_type = st.selectbox(
+            "Tipo de Evento Econômico",
+            ["Todos"] + event_types,
+            format_func=lambda x: event_type_labels.get(x, x if x != "Todos" else "Todos os Eventos"),
+        )
     with c2:
         dirs = ["Todos"]
         if sel_type != "Todos":
             dirs += sorted(events[events["event_type"] == sel_type]["direction"].dropna().unique().tolist())
-        sel_dir = st.selectbox("Direção / Ação", dirs)
+        sel_dir = st.selectbox(
+            "Direção do Choque",
+            dirs,
+            format_func=lambda x: direction_labels.get(x, x if x != "Todos" else "Todas as Direções"),
+        )
     with c3:
         asset_options = list(returns.columns)
-        sel_asset = st.selectbox("Ativo em Análise", asset_options, index=0)
+        sel_asset = st.selectbox(
+            "Ativo em Análise",
+            asset_options,
+            index=0,
+            format_func=lambda x: asset_labels.get(x.lower(), x.upper()),
+        )
 
     filter_type = None if sel_type == "Todos" else sel_type
     filter_dir = None if sel_dir == "Todos" else sel_dir
@@ -97,30 +134,33 @@ def main():
     car_5d = result.car.loc[5, "car"] * 100 if 5 in result.car.index else 0
     t_stat_5d = result.t_stats.get(5, 0)
     p_val_5d = result.p_values.get(5, 1)
-    sig_label = "Significativo (p < 0.05)" if p_val_5d < 0.05 else "Não significativo"
+    sig_label = "Estatisticamente Significativo (p < 0.05)" if p_val_5d < 0.05 else "Oscilação Normal (Não significativo)"
+    asset_display = asset_labels.get(sel_asset.lower(), sel_asset.upper())
 
     kpis = [
-        {"label": "Total de Eventos", "value": f"{result.n_events}"},
-        {"label": f"CAR t+5 ({sel_asset})", "value": f"{car_5d:+.2f}%", "delta": round(car_5d, 2), "suffix": "%"},
-        {"label": "T-Estatística (t+5)", "value": f"{t_stat_5d:.2f}"},
-        {"label": "Significância Estatística", "value": sig_label},
+        {"label": "Total de Decisões Mapeadas", "value": f"{result.n_events} eventos"},
+        {"label": f"Impacto Médio em 5 Dias ({asset_display})", "value": f"{car_5d:+.2f}%", "delta": round(car_5d, 2), "suffix": "%"},
+        {"label": "Confiabilidade Estatística (t-stat)", "value": f"{t_stat_5d:.2f}"},
+        {"label": "Validação Estatística", "value": sig_label},
     ]
     render_kpi_row(kpis)
 
     st.markdown("---")
 
     tab1, tab2, tab3 = st.tabs([
-        "📈 Trajetória Média (CAR)", "🍝 Spagetti Plot (Por Evento)", "📋 Comparativo Multi-Ativos"
+        "📈 Trajetória Média do Impacto (CAR)",
+        "🔍 Dispersão Individual dos Eventos",
+        "📋 Comparativo Entre Classes de Ativos",
     ])
 
     with tab1:
-        _plot_car_trajectory(result, sel_asset)
+        _plot_car_trajectory(result, asset_display)
 
     with tab2:
-        _plot_individual_events(result, sel_asset)
+        _plot_individual_events(result, asset_display)
 
     with tab3:
-        _plot_multi_asset(events, returns, filter_type, filter_dir)
+        _plot_multi_asset(events, returns, filter_type, filter_dir, asset_labels)
 
 
 def _plot_car_trajectory(result, asset_name):
@@ -205,7 +245,7 @@ def _plot_individual_events(result, asset_name):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _plot_multi_asset(events, returns, event_type, direction):
+def _plot_multi_asset(events, returns, event_type, direction, asset_labels: dict | None = None):
     """Multi-asset summary table."""
     multi_res = run_multi_asset_event_study(events, returns, event_type=event_type, direction=direction)
     if not multi_res:
@@ -213,9 +253,22 @@ def _plot_multi_asset(events, returns, event_type, direction):
         return
 
     table_5d = format_event_study_table(multi_res, window=5)
+    if not table_5d.empty:
+        if asset_labels:
+            table_5d["asset"] = table_5d["asset"].map(lambda x: asset_labels.get(str(x).lower(), str(x).upper()))
+        
+        rename_cols = {
+            "asset": "Classe de Ativo",
+            "CAR[0,+5] (%)": "Retorno Acumulado Médio 5D (%) [CAR]",
+            "t-stat": "Estatística-t (t-stat)",
+            "p-value": "P-Valor (Significância)",
+            "n_events": "Qtd. de Eventos",
+        }
+        table_5d = table_5d.rename(columns=rename_cols)
+
     st.markdown("### 📊 Resposta dos Ativos na Janela de 5 Dias [0, +5]")
     st.dataframe(table_5d, use_container_width=True)
-    st.caption("* p < 0.10, ** p < 0.05, *** p < 0.01 (Teste t bicaudal)")
+    st.caption("* p < 0.10, ** p < 0.05, *** p < 0.01 (Teste t bicaudal — asteriscos indicam significância estatística)")
 
 
 def _show_demo_events():
